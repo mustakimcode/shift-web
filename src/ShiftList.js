@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { Button, ButtonGroup, Container, Table } from "reactstrap";
-import AppNavbar from "./AppNavbar";
 import { Link } from "react-router-dom";
+import moment from "moment";
 
 class ShiftList extends Component {
   constructor(props) {
@@ -19,15 +19,31 @@ class ShiftList extends Component {
   }
 
   async remove(id) {
-    await fetch(`Shift/shift/${id}`, {
-      method: "DELETE",
+    // eslint-disable-next-line no-restricted-globals
+    let r = confirm("Are you sure wan tu delete this?");
+    if (r === true) {
+      await fetch(`shift/${id}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "applition/json",
+          "Content-Type": "application/json",
+        },
+      }).then(() => {
+        let updatedshifts = [...this.state.shifts].filter((i) => i._id !== id);
+        this.setState({ shifts: updatedshifts });
+      });
+    }
+  }
+
+  async publish(id) {
+    await fetch(`shift/publish/${id}`, {
+      method: "POST",
       headers: {
-        Accept: "application/json",
+        Accept: "applition/json",
         "Content-Type": "application/json",
       },
     }).then(() => {
-      let updatedshifts = [...this.state.shifts].filter((i) => i.id !== id);
-      this.setState({ shifts: updatedshifts });
+      this.componentDidMount();
     });
   }
 
@@ -39,29 +55,38 @@ class ShiftList extends Component {
     }
 
     const shiftList = shifts.map((shift) => {
+      let is_publish_key = (
+        <Button
+          size="sm"
+          color="success"
+          disabled={shift.shift_is_published}
+          onClick={() => this.publish(shift._id)}
+        >
+          {shift.shift_is_published ? "Published" : "Publish"}
+        </Button>
+      );
       return (
-        <tr key={shift.id}>
-          <td style={{ whiteSpace: "nowrap" }}>{shift.firstname}</td>
-          <td>{shift.lastname}</td>
-          <td>{shift.age}</td>
-          <td>{shift.address}</td>
-          <td>
-            <a href={shift.copyright}>{shift.copyright}</a>
-          </td>
+        <tr key={shift._id}>
+          <td>{moment(shift.shift_date).format("L")}</td>
+          <td style={{ whiteSpace: "nowrap" }}>{shift.shift_start_time}</td>
+          <td>{shift.shift_end_time}</td>
+          <td>{shift.shift_user_name}</td>
+          <td>{is_publish_key}</td>
           <td>
             <ButtonGroup>
               <Button
                 size="sm"
                 color="primary"
                 tag={Link}
-                to={"/shifts/" + shift.id}
+                disabled={shift.shift_is_published}
+                to={"/shifts/" + shift._id}
               >
                 Edit
               </Button>
               <Button
                 size="sm"
                 color="danger"
-                onClick={() => this.remove(shift.id)}
+                onClick={() => this.remove(shift._id)}
               >
                 Delete
               </Button>
@@ -73,7 +98,6 @@ class ShiftList extends Component {
 
     return (
       <div>
-        <AppNavbar />
         <Container fluid>
           <div className="float-right">
             <Button color="success" tag={Link} to="/shifts/new">
@@ -84,11 +108,11 @@ class ShiftList extends Component {
           <Table className="mt-4">
             <thead>
               <tr>
-                <th width="20%">Firstname</th>
-                <th width="20%">Lastname</th>
-                <th width="10%">Age</th>
-                <th>Address</th>
-                <th>Copyrightby</th>
+                <th width="20%">Date</th>
+                <th width="20%">Start</th>
+                <th width="20%">End</th>
+                <th width="10%">Name</th>
+                <th width="10%">Published</th>
                 <th width="10%">Actions</th>
               </tr>
             </thead>

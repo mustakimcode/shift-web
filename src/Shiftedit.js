@@ -1,21 +1,16 @@
 import React, { Component } from "react";
 import { Link, withRouter } from "react-router-dom";
 import { Button, Container, Form, FormGroup, Input, Label } from "reactstrap";
-import AppNavbar from "./AppNavbar";
+import moment from "moment";
 
 class ShiftEdit extends Component {
-  emptyShift = {
-    firstname: "",
-    lastname: "",
-    age: "",
-    address: "",
-    copyrigtby: "",
-  };
+  emptyShift = {};
 
   constructor(props) {
     super(props);
     this.state = {
       item: this.emptyShift,
+      mode: "new",
     };
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -23,10 +18,13 @@ class ShiftEdit extends Component {
 
   async componentDidMount() {
     if (this.props.match.params.id !== "new") {
-      const shift = await (
-        await fetch(`Shift/shift/${this.props.match.params.id}`)
-      ).json();
-      this.setState({ item: shift });
+      fetch(`${this.props.match.params.id}`)
+        .then((response) => response.json())
+        .then((data) => this.setState({ item: data }));
+      console.log(this.state.item);
+      this.state.mode = "edit";
+    } else {
+      this.state.mode = "new";
     }
   }
 
@@ -43,15 +41,30 @@ class ShiftEdit extends Component {
     event.preventDefault();
     const { item } = this.state;
 
-    await fetch("Shift/shift", {
-      method: item.id ? "PUT" : "POST",
+    // if (!this.checkShiftTime()) {
+    //   alert("End time must be greater than start time!!");
+    // } else {
+    await fetch("/add", {
+      method: this.state.mode === "edit" ? "PUT" : "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
       body: JSON.stringify(item),
     });
-    this.props.history.push("/shifts");
+    this.props.history.push("/");
+    // }
+  }
+
+  checkShiftTime() {
+    var start_time = moment(this.state.shift_start_time, "HH:mm");
+    var end_time = moment(this.state.shift_end_time, "HH:mm");
+
+    console.log(start_time);
+    console.log(end_time);
+    if (end_time > start_time) {
+      return true;
+    }
   }
 
   render() {
@@ -60,54 +73,54 @@ class ShiftEdit extends Component {
 
     return (
       <div>
-        <AppNavbar />
         <Container>
           {title}
           <Form onSubmit={this.handleSubmit}>
             <FormGroup>
-              <Label for="firstname">Firstname</Label>
+              <Label for="name">User Name</Label>
               <Input
                 type="text"
-                name="firstname"
-                id="firstname"
-                value={item.firstname || ""}
+                name="shift_user_name"
+                id="name"
+                value={this.state.mode !== "new" ? item.shift_user_name : null}
                 onChange={this.handleChange}
-                autoComplete="firstname"
+                autoComplete="name"
               />
             </FormGroup>
             <FormGroup>
-              <Label for="lastname">Lastname</Label>
+              <Label for="start">Date</Label>
               <Input
-                type="text"
-                name="lastname"
-                id="lastname"
-                value={item.lastname || ""}
+                type="date"
+                name="shift_date"
+                id="date"
+                value={this.state.mode !== "new" ? item.shift_date : null}
                 onChange={this.handleChange}
-                autoComplete="lastname"
+                autoComplete="date"
               />
             </FormGroup>
             <FormGroup>
-              <Label for="age">Age</Label>
+              <Label for="start">Start Hour</Label>
               <Input
-                type="text"
-                name="age"
-                id="age"
-                value={item.age || ""}
+                type="time"
+                name="shift_start_time"
+                id="start"
+                value={this.state.mode !== "new" ? item.shift_start_time : null}
                 onChange={this.handleChange}
-                autoComplete="age"
+                autoComplete="start"
               />
             </FormGroup>
             <FormGroup>
-              <Label for="address">Address</Label>
+              <Label for="end">End Hour</Label>
               <Input
-                type="text"
-                name="address"
-                id="address"
-                value={item.address || ""}
+                type="time"
+                name="shift_end_time"
+                id="end"
+                value={this.state.mode !== "new" ? item.shift_end_time : null}
                 onChange={this.handleChange}
-                autoComplete="address"
+                autoComplete="end"
               />
             </FormGroup>
+
             <FormGroup>
               <Button color="primary" type="submit">
                 Save
